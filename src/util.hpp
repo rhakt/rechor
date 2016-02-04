@@ -19,20 +19,20 @@ namespace rechor {
         return out;
     }
 
-	// make array
-	template<typename T, typename ...Args>
-	constexpr std::array<T, sizeof...(Args)> make_array(Args&&... args) {
-		return std::array<T, sizeof...(Args)>{ static_cast<Args&&>(args)... };
-	}
+    // make array
+    template<typename T, typename ...Args>
+    constexpr std::array<T, sizeof...(Args)> make_array(Args&&... args) {
+        return std::array<T, sizeof...(Args)>{ static_cast<Args&&>(args)... };
+    }
 
-	// get size of std::array
-	template<typename T, std::size_t N>
-	constexpr std::size_t array_size(const std::array<T, N>&) { return N; }
+    // get size of std::array
+    template<typename T, std::size_t N>
+    constexpr std::size_t array_size(const std::array<T, N>&) { return N; }
 
-	// get size of array[N]
-	template<typename T, std::size_t N>
-	constexpr std::size_t array_size(T(&)[N]) { return N; }
-	
+    // get size of array[N]
+    template<typename T, std::size_t N>
+    constexpr std::size_t array_size(T(&)[N]) { return N; }
+    
     
     /* noncopyable */
     class Noncopyable {
@@ -40,12 +40,10 @@ namespace rechor {
         Noncopyable() = default;
         ~Noncopyable() = default;
     private:
-        void operator =(const Noncopyable& src) = delete;
+    void operator =(const Noncopyable& src) = delete;
         Noncopyable(const Noncopyable& src) = delete;
     };
-
     
-
 
 
 } // namespace rechor

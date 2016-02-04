@@ -21,14 +21,14 @@
 
 namespace rechor {
 
-	typedef std::array<float, 3> vertex_t;
-	typedef std::array<float, 3> normal_t;
-	typedef std::array<float, 4> color_t;
-	typedef std::array<float, 2> uv_t;
-	typedef std::array<uint,  4> bindex_t;
-	typedef std::array<float, 4> bweight_t;
-	typedef std::tuple<vertex_t, normal_t, color_t, uv_t, bindex_t, bweight_t> element_t;
-	
+    typedef std::array<float, 3> vertex_t;
+    typedef std::array<float, 3> normal_t;
+    typedef std::array<float, 4> color_t;
+    typedef std::array<float, 2> uv_t;
+    typedef std::array<uint,  4> bindex_t;
+    typedef std::array<float, 4> bweight_t;
+    typedef std::tuple<vertex_t, normal_t, color_t, uv_t, bindex_t, bweight_t> element_t;
+    
     struct AnimFrameRaw {
         std::vector<std::vector<float>> meshMatrices;
         std::vector<std::vector<float>> boneMatrices;
@@ -41,18 +41,18 @@ namespace rechor {
         std::vector<AnimFrameRaw> meshes;
     };
 
-	
+    
     struct MeshRaw {
-		std::string nodeName;
-		std::vector<uint> indices;
-		std::vector<vertex_t> vertices;
+        std::string nodeName;
+        std::vector<uint> indices;
+        std::vector<vertex_t> vertices;
         std::vector<normal_t> normals;
         std::vector<color_t> colors;
         std::vector<uv_t> uvs;
         std::string texture;
         std::vector<bindex_t> boneIndices;
         std::vector<bweight_t> boneWeights;
-		/*-- temp --*/
+        /*-- temp --*/
         std::vector<std::string> boneNodeNames;
         std::vector<FbxMatrix> invBoneBasePoseMatrices;
         FbxAMatrix invMeshBasePoseMatrix;
@@ -109,22 +109,22 @@ namespace rechor {
                 const auto& bi = src.boneIndices.empty() ? make_array<uint>(0U, 0U, 0U, 0U) : src.boneIndices[i];
                 const auto& bw = src.boneWeights.empty() ? make_array<float>(0.f, 0.f, 0.f, 0.f) : src.boneWeights[i];
                 
-				auto it = std::find(
+                auto it = std::find(
                     cache.begin(), 
                     cache.end(), 
-					std::make_tuple(ver, nor, col, uv, bi, bw)
+                    std::make_tuple(ver, nor, col, uv, bi, bw)
                 );
                 if(it == cache.end()) {
                     /* not found */
-					for(auto&& v : ver) { dst.vertices.push_back(v); }
-					for(auto&& v : nor) { dst.normals.push_back(v); }
-					for(auto&& v : col) { dst.colors.push_back(v); }
-					for(auto&& v : uv) { dst.uvs.push_back(v); }
-					if(src.boneIndices.size()) {
-						for(auto&& v : bi) { dst.boneIndices.push_back(v); }
+                    for(auto&& v : ver) { dst.vertices.push_back(v); }
+                    for(auto&& v : nor) { dst.normals.push_back(v); }
+                    for(auto&& v : col) { dst.colors.push_back(v); }
+                    for(auto&& v : uv) { dst.uvs.push_back(v); }
+                    if(src.boneIndices.size()) {
+                        for(auto&& v : bi) { dst.boneIndices.push_back(v); }
                     }
                     if(src.boneWeights.size()) {
-						for(auto&& v : bw) { dst.boneWeights.push_back(v); }
+                        for(auto&& v : bw) { dst.boneWeights.push_back(v); }
                     }
                     dst.indices.push_back(cache.size());
                     cache.emplace_back(ver, nor, col, uv, bi, bw);
@@ -175,7 +175,7 @@ namespace rechor {
             const std::vector<unsigned int>& ind
         ) {
             const auto mapmode = el->GetMappingMode();
-			const auto refmode = el->GetReferenceMode();
+            const auto refmode = el->GetReferenceMode();
             const auto& indexArray = el->GetIndexArray();
             const auto& directArray = el->GetDirectArray();
 
@@ -186,12 +186,12 @@ namespace rechor {
 
             auto f = [&](int i){
                 auto d = directArray.GetAt((refmode == FbxGeometryElement::eDirect) ? i : indexArray.GetAt(i));
-				V arr;
-				for(auto i = 0U; i < std::tuple_size<V>::value; i++) { arr[i] = d[i]; }
-				target.emplace_back(std::move(arr));
+                V arr;
+                for(auto i = 0U; i < std::tuple_size<V>::value; i++) { arr[i] = d[i]; }
+                target.emplace_back(std::move(arr));
             };
 
-			if(mapmode == FbxGeometryElement::eByControlPoint) {
+            if(mapmode == FbxGeometryElement::eByControlPoint) {
                 for(auto&& i : ind) { f(i); }
             } else {
                 for(int i = 0; i < fbxmesh->GetPolygonCount() * 3; i++) { f(i); }
@@ -216,9 +216,9 @@ namespace rechor {
             for(auto&& i : mesh.indices) {
                 const auto cp = fbxmesh->GetControlPointAt(i);
                 mesh.vertices.emplace_back(make_array<float>(
-					static_cast<float>(cp[0]),
-					static_cast<float>(cp[1]),
-					static_cast<float>(cp[2])));
+                    static_cast<float>(cp[0]),
+                    static_cast<float>(cp[1]),
+                    static_cast<float>(cp[2])));
                 assert(cp[3] == 0.0);
             }
 
@@ -292,16 +292,16 @@ namespace rechor {
             for(size_t i = 0; i < rt->GetEntryCount(); i++) {
                 const auto entry = rt->GetEntry(i);
                 std::string src = entry.GetSource();
-				auto prop = material->FindPropertyHierarchical(src.c_str());
+                auto prop = material->FindPropertyHierarchical(src.c_str());
                 if(!prop.IsValid()) {
                     prop = material->RootProperty.FindHierarchical(src.c_str());
                 }
                 const auto tc = prop.GetSrcObjectCount<FbxTexture>();
                 if(tc > 0) {
-					const auto tfc = prop.GetSrcObjectCount<FbxFileTexture>();
+                    const auto tfc = prop.GetSrcObjectCount<FbxFileTexture>();
                     assert(tfc == 1);
                     for(int k = 0; k < tfc; k++) {
-						const auto tex = prop.GetSrcObject<FbxFileTexture>(k);
+                        const auto tex = prop.GetSrcObject<FbxFileTexture>(k);
                         std::string texName = tex->GetFileName();
                         texName = texName.substr(texName.find_last_of('/') + 1);
                         std::cout << "[DEBUG] texture[" << src << "]: " << texName << std::endl;
@@ -356,30 +356,30 @@ namespace rechor {
 
             // by control point
             std::vector<std::pair<bindex_t, bweight_t>> cpBone(boneWeights.size());
-			std::transform(boneWeights.begin(), boneWeights.end(), cpBone.begin(), [&](auto& bw){
-				// sort by weight
-				std::sort(bw.begin(), bw.end(), [](auto& wp1, auto& wp2) {
-					return wp1.second > wp2.second;
-				});
-				while(bw.size() > 4) { bw.pop_back(); }
-				while(bw.size() < 4) { bw.emplace_back(0, 0.f); }
-				
-				float total = 0.0f;
-				bindex_t ind;
-				bweight_t wei;
-				for(int i = 0; i < 4; i++) {
-					ind[i] = bw[i].first;
-					total += wei[i] = bw[i].second;
-				}
-				// normalize
-				for(int i = 0; i < 4; i++) {
-					wei[i] /= total;
-				}
-				
-				return std::make_pair(ind, wei);
-			});
+            std::transform(boneWeights.begin(), boneWeights.end(), cpBone.begin(), [&](auto& bw){
+                // sort by weight
+                std::sort(bw.begin(), bw.end(), [](auto& wp1, auto& wp2) {
+                    return wp1.second > wp2.second;
+                });
+                while(bw.size() > 4) { bw.pop_back(); }
+                while(bw.size() < 4) { bw.emplace_back(0, 0.f); }
+                
+                float total = 0.0f;
+                bindex_t ind;
+                bweight_t wei;
+                for(int i = 0; i < 4; i++) {
+                    ind[i] = bw[i].first;
+                    total += wei[i] = bw[i].second;
+                }
+                // normalize
+                for(int i = 0; i < 4; i++) {
+                    wei[i] /= total;
+                }
+                
+                return std::make_pair(ind, wei);
+            });
 
-			/*
+            /*
             for(auto&& bw : boneWeights) {
                 // sort by weight
                 std::sort(bw.begin(), bw.end(), [](const weightPair& wp1, const weightPair& wp2){
@@ -390,7 +390,7 @@ namespace rechor {
                 
                 float total = 0.0f;
                 decltype(cpBoneWeights)::value_type wei;
-				decltype(cpBoneIndices)::value_type ind;
+                decltype(cpBoneIndices)::value_type ind;
                 for(int i = 0; i < 4; i++) {
                     ind[i] = bw[i].first;
                     wei[i] = bw[i].second;
@@ -405,11 +405,11 @@ namespace rechor {
             }*/
 
             // extend by index
-			mesh.boneIndices.reserve(mesh.indices.size());
-			mesh.boneWeights.reserve(mesh.indices.size());
+            mesh.boneIndices.reserve(mesh.indices.size());
+            mesh.boneWeights.reserve(mesh.indices.size());
             for(auto i : mesh.indices) {
-				mesh.boneIndices.push_back(cpBone[i].first);
-				mesh.boneWeights.push_back(cpBone[i].second);
+                mesh.boneIndices.push_back(cpBone[i].first);
+                mesh.boneWeights.push_back(cpBone[i].second);
             }
 
         }
@@ -430,9 +430,9 @@ namespace rechor {
                         FbxTime time;
                         time.Set(FbxTime::GetOneFrameValue(FbxTime::eFrames60) * frame);
 
-						const auto& meshMatrix = meshNode->EvaluateGlobalTransform(time);
+                        const auto& meshMatrix = meshNode->EvaluateGlobalTransform(time);
                         //auto matrixRaw = m.invMeshBasePoseMatrix * meshMatrix;  f*ck
-						const auto matrixRaw = meshMatrix * m.invMeshBasePoseMatrix;
+                        const auto matrixRaw = meshMatrix * m.invMeshBasePoseMatrix;
                         std::vector<float> matrix(16);
                         for (int i = 0; i < 16; i++) {
                             matrix[i] = static_cast<float>(matrixRaw[i / 4][i % 4]);
@@ -460,9 +460,9 @@ namespace rechor {
                         std::vector<float> boneMatrices;
                         boneMatrices.reserve(boneNodes.size());
                         for(auto&& boneNode : boneNodes) {
-							const auto& boneMatrix = boneNode->EvaluateGlobalTransform(time);
+                            const auto& boneMatrix = boneNode->EvaluateGlobalTransform(time);
                             //auto matrixRaw = m.invBoneBasePoseMatrices[k] * boneMatrix;
-							const auto matrixRaw = (FbxMatrix)boneMatrix * m.invBoneBasePoseMatrices[k];
+                            const auto matrixRaw = (FbxMatrix)boneMatrix * m.invBoneBasePoseMatrices[k];
                             for(int i = 0; i < 16; i++) {
                                 boneMatrices.push_back(static_cast<float>(matrixRaw[i / 4][i % 4]));
                             }

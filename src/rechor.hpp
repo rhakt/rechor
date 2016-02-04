@@ -16,7 +16,7 @@
 
 namespace rechor {
 
-	typedef unsigned int uint;
+    typedef unsigned int uint;
 
     class Importer : private Noncopyable {
     public:
@@ -61,7 +61,7 @@ namespace rechor {
                 scene.meshes.emplace_back(m);
             }
 
-			/* TODO: import bone, anim */
+            /* TODO: import bone, anim */
 
             return true;
         }
