@@ -1,0 +1,32 @@
+namespace rechor.model;
+
+table Frame {
+  data:[float];
+}
+
+table AnimFrame {
+  meshMatrices:[Frame];
+  boneMatrices:[Frame];
+}
+
+table Anim {
+  meshes:[AnimFrame];
+}
+  
+table Mesh {
+  vertices:[float];
+  normals:[float];
+  indices:[int];
+  colors:[float];
+  uvs:[float];
+  texture:string;
+  boneIndices:[int];
+  boneWeights:[float];
+}
+
+table Scene {
+  meshes:[Mesh];
+  animes:[Anim];
+}
+
+root_type Scene;
