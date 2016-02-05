@@ -23,10 +23,11 @@ auto main(int argc, char* argv[])-> int {
     const char* fi = "model/unitychan.fbx";
     const char* fi2 = "model/unitychan_WAIT04.fbx";
     const char* fi3 = "model/unitychan_WIN00.fbx";
-    const char* fo = "model/unitychan.rchr";
+    const char* fo = "model/unitychan.rkr";
+    const char* fo2 = "model/unitychan2.rkr";
     
     rechor::FBXImporter importer;
-    rechor::Exporter exporter;
+    rechor::Exporter exporter, reexporter;
     rechor::Importer reimporter;
     rechor::Scene scene, scene2;
     
@@ -51,8 +52,14 @@ auto main(int argc, char* argv[])-> int {
     }
     
     if(!reimporter.load(fo, scene2)) {
-        logger::error("fail to load ", '"', fi, '"');
+        logger::error("fail to load ", '"', fo, '"');
         return -1;
     }
+    
+    if(!reexporter.save(fo2, scene2)) {
+        logger::error("fail to save ", '"', fo2, '"');
+        return -1;
+    }
+    logger::info("finish!");
     
 }

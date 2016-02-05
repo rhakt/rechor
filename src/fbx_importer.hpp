@@ -147,9 +147,6 @@ namespace rechor {
             Anim dst;
             dst.meshes.reserve(src.meshes.size());
             for(auto&& m : src.meshes) {
-                //AnimFrame af;
-                //af.meshMatrices = std::move(m.meshMatrices);
-                //af.boneMatrices = std::move(m.boneMatrices);
                 dst.meshes.push_back({std::move(m.meshMatrices), std::move(m.boneMatrices)});
             }
             return std::move(dst);
@@ -253,6 +250,7 @@ namespace rechor {
             }
             //assert(implementation != nullptr);
             
+            // TODO: もうちょっと まとめる
             if(implementation == nullptr) {
                 FbxProperty prop = material->FindProperty(FbxSurfaceMaterial::sDiffuse);
                 assert(prop.IsValid());
@@ -500,6 +498,9 @@ namespace rechor {
                     rmesh.invMeshBasePoseMatrix = node->EvaluateGlobalTransform().Inverse();
                     if(option & OPTION::LOAD_MATERIAL) {
                         const auto matc = node->GetMaterialCount();
+                        // なんか形式によってはMeshがすべてのMaterialを持っていることがある？
+                        // 同じMaterialを何度も参照してるので効率が悪い
+                        // テクスチャ名しか取るつもりは無いのでまぁね
                         const auto mat = node->GetMaterial(mc == matc ? i : 0);
                         parseMaterial(mat, rmesh);
                     }
