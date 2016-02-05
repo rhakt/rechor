@@ -4,10 +4,7 @@
 #include <iostream>
 #include "main.hpp"
 
-#define QUOTE(str) "\"" << str << "\""
-
-
-int main(int argc, char* argv[]) {
+auto main(int argc, char* argv[])-> int {
 
 #if _DEBUG && _MSC_VER
     // check memory leak (only VS)
@@ -18,7 +15,10 @@ int main(int argc, char* argv[]) {
     });
 #endif
 
-    std::cout << "[RECHOR]" << std::endl;
+    using logger = rechor::logger;
+    logger::setLevel(rechor::LOGLEVEL::DEBUG);
+
+    logger::info("[RECHOR]");
 
     const char* fi = "model/unitychan.fbx";
     const char* fi2 = "model/unitychan_WAIT04.fbx";
@@ -32,29 +32,27 @@ int main(int argc, char* argv[]) {
     
     using OPTION = rechor::FBXImporter::OPTION;
     
-    if(!importer.load(fi, OPTION::LOAD_MESH | OPTION::LOAD_BONEWEIGHT)){
-        std::cout << "fail to load " << QUOTE(fi) << std::endl;
+    if(!importer.load(fi, OPTION::LOAD_MESH | OPTION::LOAD_BONEWEIGHT)) {
+        logger::error("fail to load ", '"', fi, '"');
         return -1;
     }
-    if (!importer.load(fi2, OPTION::LOAD_ANIM)){
-        std::cout << "fail to load " << QUOTE(fi2) << std::endl;
+    if(!importer.load(fi2, OPTION::LOAD_ANIM)) {
+        logger::error("fail to load ", '"', fi2, '"');
         return -1;
     }
-    if(!importer.load(fi3, scene, OPTION::LOAD_ANIM)){
-        std::cout << "fail to load " << QUOTE(fi3) << std::endl;
+    if(!importer.load(fi3, scene, OPTION::LOAD_ANIM)) {
+        logger::error("fail to load ", '"', fi3, '"');
         return -1;
     }
  
-    if (!exporter.save(fo, scene)){
-        std::cout << "fail to save " << QUOTE(fo) << std::endl;
+    if(!exporter.save(fo, scene)) {
+        logger::error("fail to save ", '"', fo, '"');
         return -1;
     }
     
-    /*if (!reimporter.load(fo, scene2)){
-        std::cout << "fail to load " << QUOTE(fo) << std::endl;
+    if(!reimporter.load(fo, scene2)) {
+        logger::error("fail to load ", '"', fi, '"');
         return -1;
-    }*/
+    }
     
-
-    return 0;
 }

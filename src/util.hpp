@@ -7,18 +7,7 @@
 #include <array>
 
 namespace rechor {
-
-    /* console output utility */
-    template <typename T>
-    std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
-        if (!v.empty()) {
-            out << '[';
-            std::copy(v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
-            out << "\b\b]";
-        }
-        return out;
-    }
-
+    
     // make array
     template<typename T, typename ...Args>
     constexpr std::array<T, sizeof...(Args)> make_array(Args&&... args) {

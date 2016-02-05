@@ -16,6 +16,7 @@
 #include <fbxsdk.h>
 
 #include "scene.hpp"
+#include "logger.hpp"
 #include "util.hpp"
 
 
@@ -88,7 +89,8 @@ namespace rechor {
         SceneRaw rscene_;
 
         
-        void processMesh(Mesh& dst, MeshRaw& src) {
+        Mesh processMesh(const MeshRaw& src) {
+            Mesh dst;
             std::vector<element_t> cache;
             cache.reserve(src.indices.size());
 
@@ -138,34 +140,33 @@ namespace rechor {
 
             dst.texture = std::move(src.texture);
 
+            return std::move(dst);
         }
 
-        void processAnim(Anim& dst, AnimRaw& src) {
-            
+        Anim processAnim(AnimRaw& src) {
+            Anim dst;
             dst.meshes.reserve(src.meshes.size());
             for(auto&& m : src.meshes) {
-                AnimFrame af;
-                af.meshMatrices = std::move(m.meshMatrices);
-                af.boneMatrices = std::move(m.boneMatrices);
-                dst.meshes.emplace_back(std::move(af));
-            }     
+                //AnimFrame af;
+                //af.meshMatrices = std::move(m.meshMatrices);
+                //af.boneMatrices = std::move(m.boneMatrices);
+                dst.meshes.push_back({std::move(m.meshMatrices), std::move(m.boneMatrices)});
+            }
+            return std::move(dst);
         }
 
         void processScene(Scene& dst, SceneRaw& src) {
             dst.meshes.reserve(src.meshes.size());
-            for(auto&& srcm : src.meshes) {
-                Mesh dstm;
-                processMesh(dstm, srcm);
-                dst.meshes.emplace_back(std::move(dstm));
+            dst.animes.reserve(src.animes.size());
+            logger::info("process mesh...");
+            for(auto&& src : src.meshes) {
+                dst.meshes.push_back(std::move(processMesh(src)));
             }
-
-            for(auto&& srca : src.animes) {
-                Anim dsta;
-                processAnim(dsta, srca);
-                dst.animes.emplace_back(std::move(dsta));
+            logger::info("process anim...");
+            for(auto&& src : src.animes) {
+                dst.animes.push_back(std::move(processAnim(src)));
             }
         }
-
         
         template <typename U, typename V>
         void parseElement(
@@ -188,7 +189,7 @@ namespace rechor {
                 auto d = directArray.GetAt((refmode == FbxGeometryElement::eDirect) ? i : indexArray.GetAt(i));
                 V arr;
                 for(auto i = 0U; i < std::tuple_size<V>::value; i++) { arr[i] = d[i]; }
-                target.emplace_back(std::move(arr));
+                target.push_back(std::move(arr));
             };
 
             if(mapmode == FbxGeometryElement::eByControlPoint) {
@@ -215,7 +216,7 @@ namespace rechor {
             mesh.vertices.reserve(mesh.indices.size());
             for(auto&& i : mesh.indices) {
                 const auto cp = fbxmesh->GetControlPointAt(i);
-                mesh.vertices.emplace_back(make_array<float>(
+                mesh.vertices.push_back(make_array<float>(
                     static_cast<float>(cp[0]),
                     static_cast<float>(cp[1]),
                     static_cast<float>(cp[2])));
@@ -243,7 +244,7 @@ namespace rechor {
         void parseMaterial(FbxSurfaceMaterial* const material, MeshRaw& mesh) {
             const auto materialName = material->GetName();
 
-            std::cout << "[DEBUG] material: " << materialName << std::endl;
+            //logger::debug("material: ", materialName);
 
             // TODO: 
             auto implementation = GetImplementation(material, FBXSDK_IMPLEMENTATION_CGFX);
@@ -265,7 +266,7 @@ namespace rechor {
                         std::string texName = tex->GetFileName();
                         texName = texName.substr(texName.find_last_of('/') + 1);
                         texName = texName.substr(texName.find_last_of('\\') + 1);
-                        std::cout << "[DEBUG] texture[" << "FbxSurfaceMaterial::sDiffuse" << "]: " << texName << std::endl;
+                        //std::cout << "[DEBUG] texture[" << "FbxSurfaceMaterial::sDiffuse" << "]: " << texName << std::endl;
                         if(k == 0) { mesh.texture = texName; }
                     }
                     const auto ltc = prop.GetSrcObjectCount<FbxLayeredTexture>();
@@ -279,7 +280,7 @@ namespace rechor {
                             std::string texName = tex->GetFileName();
                             texName = texName.substr(texName.find_last_of('/') + 1);
                             texName = texName.substr(texName.find_last_of('\\') + 1);
-                            std::cout << "[DEBUG] layered texture[" << "FbxSurfaceMaterial::sDiffuse" << "]: " << texName << std::endl;
+                            //std::cout << "[DEBUG] layered texture[" << "FbxSurfaceMaterial::sDiffuse" << "]: " << texName << std::endl;
                             //mesh.texture = texName;
                         }
                     }
@@ -304,7 +305,7 @@ namespace rechor {
                         const auto tex = prop.GetSrcObject<FbxFileTexture>(k);
                         std::string texName = tex->GetFileName();
                         texName = texName.substr(texName.find_last_of('/') + 1);
-                        std::cout << "[DEBUG] texture[" << src << "]: " << texName << std::endl;
+                        //std::cout << "[DEBUG] texture[" << src << "]: " << texName << std::endl;
                         // TODO:
                         if(mesh.texture.length() == 0){
                             mesh.texture = texName;
@@ -348,8 +349,8 @@ namespace rechor {
                 mesh.boneNodeNames.push_back(cluster->GetLink()->GetName());
 
                 // invMatrix of BasePose
-                const auto bbpm = cluster->GetLink()->EvaluateGlobalTransform().Inverse();
-                mesh.invBoneBasePoseMatrices.emplace_back(bbpm);
+                auto bbpm = cluster->GetLink()->EvaluateGlobalTransform().Inverse();
+                mesh.invBoneBasePoseMatrices.push_back(bbpm);
 
                 cc++;
             }
@@ -378,31 +379,6 @@ namespace rechor {
                 
                 return std::make_pair(ind, wei);
             });
-
-            /*
-            for(auto&& bw : boneWeights) {
-                // sort by weight
-                std::sort(bw.begin(), bw.end(), [](const weightPair& wp1, const weightPair& wp2){
-                    return wp1.second > wp2.second;
-                });
-                while(bw.size() > 4) { bw.pop_back(); }
-                while(bw.size() < 4) { bw.emplace_back(0, 0.f); }
-                
-                float total = 0.0f;
-                decltype(cpBoneWeights)::value_type wei;
-                decltype(cpBoneIndices)::value_type ind;
-                for(int i = 0; i < 4; i++) {
-                    ind[i] = bw[i].first;
-                    wei[i] = bw[i].second;
-                    total += wei[i]; 
-                }
-                // normalize
-                for(int i = 0; i < 4; i++) {
-                    wei[i] /= total;
-                }
-                cpBoneWeights.emplace_back(std::move(wei));
-                cpBoneIndices.emplace_back(std::move(ind));
-            }*/
 
             // extend by index
             mesh.boneIndices.reserve(mesh.indices.size());
@@ -434,10 +410,10 @@ namespace rechor {
                         //auto matrixRaw = m.invMeshBasePoseMatrix * meshMatrix;  f*ck
                         const auto matrixRaw = meshMatrix * m.invMeshBasePoseMatrix;
                         std::vector<float> matrix(16);
-                        for (int i = 0; i < 16; i++) {
+                        for(int i = 0; i < 16; i++) {
                             matrix[i] = static_cast<float>(matrixRaw[i / 4][i % 4]);
                         }
-                        af.meshMatrices.emplace_back(matrix);
+                        af.meshMatrices.push_back(std::move(matrix));
 
                     }
                 }
@@ -445,7 +421,7 @@ namespace rechor {
                 /* bone matrix */
                 if(!m.boneNodeNames.empty()) {
                     std::vector<FbxNode*> boneNodes(m.boneNodeNames.size());
-                    std::transform(m.boneNodeNames.begin(), m.boneNodeNames.end(), boneNodes.begin(), [&](std::string bn){
+                    std::transform(m.boneNodeNames.begin(), m.boneNodeNames.end(), boneNodes.begin(), [&](auto bn){
                         auto it = this->nodemap.find(bn);
                         assert(it != this->nodemap.end());
                         return fbxscene->GetNode(it->second);
@@ -468,14 +444,16 @@ namespace rechor {
                             }
                             k++;
                         }
-                        af.boneMatrices.emplace_back(std::move(boneMatrices));
+                        af.boneMatrices.push_back(std::move(boneMatrices));
                     }
                 }
-                anim.meshes.emplace_back(std::move(af));
+                anim.meshes.push_back(std::move(af));
             }
         }
 
         bool loadRaw(const char* const filename, SceneRaw& scene, FBX_IMPORTER_OPTION option = OPTION::LOAD_ALL) {
+
+            logger::info("parse ", filename, " ...");
 
             std::unique_ptr<FbxManager, fbx_deleter<FbxManager>> manager(FbxManager::Create());
 
@@ -486,22 +464,22 @@ namespace rechor {
 
             std::unique_ptr<FbxImporter, fbx_deleter<FbxImporter>> importer(FbxImporter::Create(manager.get(), ""));
             if(!importer->Initialize(filename, -1, manager->GetIOSettings())) {
-                std::cout << "[FBX Importer] " << importer->GetStatus().GetErrorString() << std::endl;
+                logger::error("[FBX Importer] ", importer->GetStatus().GetErrorString());
                 return false;
             }
 
             std::unique_ptr<FbxScene, fbx_deleter<FbxScene>> fbxscene(FbxScene::Create(manager.get(), "Scene"));
             if(!importer->Import(fbxscene.get())) {
-                std::cout << "[FBX Importer] " << importer->GetStatus().GetErrorString() << std::endl;
+                logger::error("[FBX Importer] ", importer->GetStatus().GetErrorString());
                 return false;
             }
 
             FbxGeometryConverter geoconv(manager.get());
             if(!geoconv.Triangulate(fbxscene.get(), true)) {
-                std::cout << "[WARN] triangulate failed." << std::endl;
+                logger::warn("[WARN] triangulate failed.");
             }
             if(!geoconv.SplitMeshesPerMaterial(fbxscene.get(), true)) {
-                std::cout << "[WARN] split material failed." << std::endl;
+                logger::warn("[WARN] split material failed.");
             }
 
             this->nodemap.clear();
@@ -531,7 +509,7 @@ namespace rechor {
                     if(option & OPTION::LOAD_BONEWEIGHT) {
                         parseBoneWeight(mesh, rmesh);
                     }
-                    scene.meshes.emplace_back(std::move(rmesh));
+                    scene.meshes.push_back(std::move(rmesh));
                 }
 
             }
@@ -548,7 +526,7 @@ namespace rechor {
 
                 parseAnim(fbxscene.get(), scene, ranim);
 
-                scene.animes.emplace_back(std::move(ranim));
+                scene.animes.push_back(std::move(ranim));
             }
 
             return true;

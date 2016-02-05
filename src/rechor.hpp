@@ -11,6 +11,7 @@
 #include <lz4.h>
 
 #include "scene.hpp"
+#include "logger.hpp"
 #include "util.hpp"
 #include "scene_generated.h"
 
@@ -24,8 +25,12 @@ namespace rechor {
         virtual ~Importer() {}
 
         bool load(const char* filename, Scene& scene) {
+            
+            logger::info("loading...");
+            
             std::string buf;
             if(!flatbuffers::LoadFile(filename, true, &buf)) {
+                logger::error("[Flatbuffers] LoadFile error");
                 return false;
             }
 
@@ -33,33 +38,38 @@ namespace rechor {
             std::unique_ptr<char> dest(new char[inputsize * 10]);
             auto outputsize = LZ4_decompress_safe(buf.data(), dest.get(), inputsize, inputsize * 10);
             if (outputsize <= 0) {
-                std::cout << "[LZ4] error." << std::endl;
+                logger::error("[LZ4] decompress error");
+                return false;
             }
 
             auto s = model::GetScene(reinterpret_cast<const void*>(dest.get()));
             
             auto m = s->meshes();
-
+            
+            scene.meshes.reserve(m->size());
             for(auto&& mm : *m) {
-                Mesh m;
+                Mesh mesh;
+                mm->vertices();
                 for(auto&& v : *(mm->vertices())) {
-                    m.vertices.push_back(v);
+                    mesh.vertices.push_back(v);
                 }
-                for (auto&& v : *(mm->normals())) {
-                    m.normals.push_back(v);
+                for(auto&& v : *(mm->normals())) {
+                    mesh.normals.push_back(v);
                 }
-                for (auto&& v : *(mm->indices())) {
-                    m.indices.push_back(v);
+                for(auto&& v : *(mm->indices())) {
+                    mesh.indices.push_back(v);
                 }
-                for (auto&& v : *(mm->colors())) {
-                    m.colors.push_back(v);
+                for(auto&& v : *(mm->colors())) {
+                    mesh.colors.push_back(v);
                 }
-                for (auto&& v : *(mm->uvs())) {
-                    m.uvs.push_back(v);
+                for(auto&& v : *(mm->uvs())) {
+                    mesh.uvs.push_back(v);
                 }
-                m.texture = mm->texture()->str();
-                scene.meshes.emplace_back(m);
+                mesh.texture = mm->texture()->str();
+
+                scene.meshes.push_back(std::move(mesh));
             }
+            
 
             /* TODO: import bone, anim */
 
@@ -77,10 +87,12 @@ namespace rechor {
 
         bool save(const char* filename, const Scene& scene, bool binary = true) {
 
-            std::vector<flatbuffers::Offset<model::Mesh>> mm;
+            logger::info("saving...");
+
+            std::vector<flatbuffers::Offset<model::Mesh>> mm(scene.meshes.size());
             std::vector<flatbuffers::Offset<model::Anim>> aa;
 
-            for(auto&& m : scene.meshes) {
+            std::transform(scene.meshes.begin(), scene.meshes.end(), mm.begin(), [&](auto& m){
                 auto vertex = fbb.CreateVector(m.vertices);
                 auto normal = fbb.CreateVector(m.normals);
                 auto index = fbb.CreateVector(m.indices);
@@ -98,8 +110,9 @@ namespace rechor {
                 mb.add_texture(tex);
                 mb.add_boneIndices(bi);
                 mb.add_boneWeights(bw);
-                mm.push_back(mb.Finish());
-            }
+                return std::move(mb.Finish());
+            });
+
             for(auto&& a : scene.animes) {
                 std::vector<flatbuffers::Offset<model::AnimFrame>> af;
                 for(auto&& m : a.meshes) {
@@ -108,26 +121,26 @@ namespace rechor {
                         auto data = fbb.CreateVector(mf);
                         model::FrameBuilder fb(fbb);
                         fb.add_data(data);
-                        mmf.push_back(fb.Finish());
+                        mmf.push_back(std::move(fb.Finish()));
                     }
                     std::vector<flatbuffers::Offset<model::Frame>> bif;
                     for(auto&& bf : m.boneMatrices) {
                         auto data = fbb.CreateVector(bf);
                         model::FrameBuilder fb(fbb);
                         fb.add_data(data);
-                        bif.push_back(fb.Finish());
+                        bif.push_back(std::move(fb.Finish()));
                     }
                     auto vmmf = fbb.CreateVector(mmf);
                     auto vbif = fbb.CreateVector(bif);
                     model::AnimFrameBuilder afb(fbb);
                     afb.add_meshMatrices(vmmf);
                     afb.add_boneMatrices(vbif);
-                    af.push_back(afb.Finish());
+                    af.push_back(std::move(afb.Finish()));
                 }
                 auto ms = fbb.CreateVector(af);
                 model::AnimBuilder ab(fbb);
                 ab.add_meshes(ms);
-                aa.push_back(ab.Finish());
+                aa.push_back(std::move(ab.Finish()));
             }
             auto mesh = fbb.CreateVector(mm);
             auto anim = fbb.CreateVector(aa);
@@ -142,7 +155,8 @@ namespace rechor {
             std::unique_ptr<char> dest(new char[LZ4_compressBound(inputsize)]);
             auto outputsize = LZ4_compress(reinterpret_cast<const char *>(fbb.GetBufferPointer()), dest.get(), inputsize);
             if(outputsize <= 0) {
-                std::cout << "[LZ4] error." << std::endl;
+                logger::error("[LZ4] compress error");
+                return false;
             }
 
             auto ok = flatbuffers::SaveFile(
@@ -153,7 +167,10 @@ namespace rechor {
                 );
 
             fbb.ReleaseBufferPointer();
-           
+            
+            if(!ok) {
+                logger::error("[Flatbuffers] SaveFile error");
+            }
             return ok;
         }
     };
