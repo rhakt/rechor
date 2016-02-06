@@ -5,7 +5,7 @@
 
 #include <flatbuffers/flatbuffers.h>
 
-
+namespace rhakt {
 namespace rechor {
 namespace model {
 
@@ -251,5 +251,6 @@ inline void FinishSceneBuffer(flatbuffers::FlatBufferBuilder &fbb, flatbuffers::
 
 }  // namespace model
 }  // namespace rechor
+}  // namespace rhakt
 
 #endif  // FLATBUFFERS_GENERATED_SCENE_RECHOR_MODEL_H_

@@ -15,11 +15,9 @@
 
 #include <fbxsdk.h>
 
-#include "scene.hpp"
-#include "logger.hpp"
-#include "util.hpp"
+#include "rechor.hpp"
 
-
+namespace rhakt {
 namespace rechor {
 
     typedef std::array<float, 3> vertex_t;
@@ -65,7 +63,7 @@ namespace rechor {
     };
     
 
-    class FBXImporter : private Noncopyable {
+    class FBXImporter : private util::Noncopyable {
     public:
         
         typedef int FBX_IMPORTER_OPTION;
@@ -107,9 +105,9 @@ namespace rechor {
                 const auto& ver = src.vertices[i];
                 const auto& nor = src.normals[i];
                 const auto& uv = src.uvs[i];
-                const auto& col = src.colors.empty() ? make_array<float>(1.f, 1.f, 1.f, 1.f) : src.colors[i];
-                const auto& bi = src.boneIndices.empty() ? make_array<uint>(0U, 0U, 0U, 0U) : src.boneIndices[i];
-                const auto& bw = src.boneWeights.empty() ? make_array<float>(0.f, 0.f, 0.f, 0.f) : src.boneWeights[i];
+                const auto& col = src.colors.empty() ? util::make_array<float>(1.f, 1.f, 1.f, 1.f) : src.colors[i];
+                const auto& bi = src.boneIndices.empty() ? util::make_array<uint>(0U, 0U, 0U, 0U) : src.boneIndices[i];
+                const auto& bw = src.boneWeights.empty() ? util::make_array<float>(0.f, 0.f, 0.f, 0.f) : src.boneWeights[i];
                 
                 auto it = std::find(
                     cache.begin(), 
@@ -213,7 +211,7 @@ namespace rechor {
             mesh.vertices.reserve(mesh.indices.size());
             for(auto&& i : mesh.indices) {
                 const auto cp = fbxmesh->GetControlPointAt(i);
-                mesh.vertices.push_back(make_array<float>(
+                mesh.vertices.push_back(util::make_array<float>(
                     static_cast<float>(cp[0]),
                     static_cast<float>(cp[1]),
                     static_cast<float>(cp[2])));
@@ -472,10 +470,12 @@ namespace rechor {
                 return false;
             }
 
+            logger::debug("triangulate");
             FbxGeometryConverter geoconv(manager.get());
             if(!geoconv.Triangulate(fbxscene.get(), true)) {
                 logger::warn("[WARN] triangulate failed.");
             }
+            logger::debug("split material");
             if(!geoconv.SplitMeshesPerMaterial(fbxscene.get(), true)) {
                 logger::warn("[WARN] split material failed.");
             }
@@ -549,6 +549,6 @@ namespace rechor {
 
     };
 
-} // namespace rechor
+}} // namespace rhakt::rechor
 
 #endif

@@ -1,4 +1,4 @@
-namespace rechor.model;
+namespace rhakt.rechor.model;
 
 table Frame {
   data:[float];

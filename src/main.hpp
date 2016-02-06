@@ -9,8 +9,9 @@
 #include <crtdbg.h>
 #endif
 
-#include "rechor.hpp"
-#include "fbx_importer.hpp"
+#include "rechor/rechor_importer.hpp"
+#include "rechor/rechor_exporter.hpp"
+#include "rechor/fbx_importer.hpp"
 
 
 #endif

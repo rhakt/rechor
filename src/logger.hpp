@@ -1,5 +1,5 @@
-#ifndef _RHACT_RECHOR_LOGGER_HPP_
-#define _RHACT_RECHOR_LOGGER_HPP_
+#ifndef _RHACT_LOGGER_HPP_
+#define _RHACT_LOGGER_HPP_
 
 #include <iostream>
 #include <vector>
@@ -17,7 +17,7 @@
         std::method << prefix << ss.str() << suffix << std::endl; \
     }
 
-namespace rechor {
+namespace rhakt {
 
 template <typename T>
 std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
@@ -59,6 +59,6 @@ public:
     LOG_FUNC_GEN(log,   LOG,    cout,   "", "");
 };
 
-} // namespace rechor
+} // namespace rhakt
 
-#endif // end of _RHACT_RECHOR_LOGGER_HPP_
+#endif

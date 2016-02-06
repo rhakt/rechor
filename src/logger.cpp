@@ -1,8 +1,8 @@
 #include "logger.hpp"
 
-namespace rechor {
+namespace rhakt {
 
 LOGLEVEL logger::level = LOGLEVEL::INFO;
 
-} // namespace rechor
+} // namespace rhakt
 

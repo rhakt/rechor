@@ -14,9 +14,9 @@ auto main(int argc, char* argv[])-> int {
         std::system("pause");
     });
 #endif
+    using namespace rhakt;
 
-    using logger = rechor::logger;
-    logger::setLevel(rechor::LOGLEVEL::DEBUG);
+    logger::setLevel(LOGLEVEL::DEBUG);
 
     logger::info("[RECHOR]");
 

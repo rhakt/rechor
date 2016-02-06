@@ -1,13 +1,23 @@
 // rechor project
-// scene.hpp
+// rechor.hpp
 
-#ifndef _RHACT_RECHOR_SCENE_HPP_
-#define _RHACT_RECHOR_SCENE_HPP_
+#ifndef _RHACT_RECHOR_RECHOR_HPP_
+#define _RHACT_RECHOR_RECHOR_HPP_
 
 #include <vector>
 #include <string>
 
+#include <lz4.h>
+
+#include "../logger.hpp"
+#include "../util.hpp"
+#include "scene_generated.h"
+
+namespace rhakt {
 namespace rechor {
+
+    typedef unsigned int uint;
+    typedef unsigned char uchar;
 
     struct AnimFrame {
         std::vector<std::vector<float>> meshMatrices;
@@ -34,6 +44,7 @@ namespace rechor {
         std::vector<Anim> animes;
     };
 
-} // namespace rechor
+
+}} // namespace rhakt::rechor
 
 #endif
